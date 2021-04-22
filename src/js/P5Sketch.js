@@ -2,64 +2,120 @@ import React, { useRef, useEffect } from "react";
 import "./helpers/Globals";
 import "p5/lib/addons/p5.sound";
 import * as p5 from "p5";
-import ShuffleArray from "./functions/ShuffleArray.js";
+import Circle from "./Circle.js";
+import image from "../images/light-people.jpg";
 
 const P5Sketch = () => {
-    const sketchRef = useRef();
+  const sketchRef = useRef();
 
-    const Sketch = p => {
+  const Sketch = (p) => {
+    p.canvas = null;
 
-        p.canvas = null;
+    p.canvasWidth = window.innerWidth;
 
-        p.canvasWidth = window.innerWidth;
+    p.canvasHeight = window.innerHeight;
 
-        p.canvasHeight = window.innerHeight;
+    p.img = "";
 
-        p.setup = () => {
-            p.canvas = p.createCanvas(p.canvasWidth, p.canvasHeight);
-        };
+    p.k = 0;
 
-        p.draw = () => {
-            p.background(0);
-        };
+    p.circles = [];
 
-        p.updateCanvasDimensions = () => {
-            p.canvasWidth = window.innerWidth;
-            p.canvasHeight = window.innerHeight;
-            p.createCanvas(p.canvasWidth, p.canvasHeight);
-            p.redraw();
-        }
-
-        if (window.attachEvent) {
-            window.attachEvent(
-                'onresize',
-                function () {
-                    p.updateCanvasDimensions();
-                }
-            );
-        }
-        else if (window.addEventListener) {
-            window.addEventListener(
-                'resize',
-                function () {
-                    p.updateCanvasDimensions();
-                },
-                true
-            );
-        }
-        else {
-            //The browser does not support Javascript event binding
-        }
+    p.preload = () => {
+      p.img = p.loadImage(image);
     };
 
-    useEffect(() => {
-        new p5(Sketch, sketchRef.current);
-    }, []);
+    p.setup = () => {
+      p.canvas = p.createCanvas(p.canvasWidth, p.canvasHeight);
+      p.imageMode(p.CENTER);
+      p.image(p.img, 0, 0);
+      let colour = p.get(p.width / 2, p.height / 2);
+      colour = p.color(colour, 80);
+      const circle = new Circle(
+        p,
+        p.width >> 1,
+        p.height >> 1,
+        p.width / 2,
+        colour
+      );
+      p.circles.push(circle);
+    };
 
-    return (
-        <div ref={sketchRef}>
-        </div>
-    );
+    //https://openprocessing.org/sketch/200114
+    p.draw = () => {
+      p.background(255);
+
+      if (p.k < 1) {
+        p.image(p.img, p.width / 2, p.height / 2);
+      }
+
+      for (let i = 0; i < p.circles.length; i++) {
+        const circle = p.circles[i];
+        circle.show();
+      }
+
+      for (let i = 0; i < p.circles.length; i++) {
+        const circle = p.circles[i];
+        if (p.dist(p.mouseX, p.mouseY, circle.x, circle.y) < circle.r) {
+          p.k = 2;
+          p.circles.splice(i, 1);
+          for (let kx = 0; kx < 2; kx++) {
+            for (let ky = 0; ky < 2; ky++) {
+              let c = p.img.get(
+                p.int((p.pow(-1, kx) * circle.r) / 2 + circle.x),
+                p.int((p.pow(-1, ky) * circle.r) / 2 + circle.y)
+              );
+              const newCircle = new Circle(
+                p,
+                (p.pow(-1, kx) * circle.r) / 2 + circle.x,
+                (p.pow(-1, ky) * circle.r) / 2 + circle.y,
+                circle.r / 2,
+                c
+              );
+              p.circles.push(newCircle);
+              p.press = false;
+            }
+          }
+        }
+      }
+    };
+
+    p.press = false;
+
+    p.mouseDragged = () => {
+      p.press = true;
+      p.k++;
+    };
+
+    p.updateCanvasDimensions = () => {
+      p.canvasWidth = window.innerWidth;
+      p.canvasHeight = window.innerHeight;
+      p.createCanvas(p.canvasWidth, p.canvasHeight);
+      p.redraw();
+    };
+
+    if (window.attachEvent) {
+      window.attachEvent("onresize", function () {
+        p.updateCanvasDimensions();
+      });
+    } else if (window.addEventListener) {
+      window.addEventListener(
+        "resize",
+        function () {
+          p.updateCanvasDimensions();
+        },
+        true
+      );
+    } else {
+      //The browser does not support Javascript event binding
+    }
+  };
+
+  useEffect(() => {
+    new p5(Sketch, sketchRef.current);
+  }, []);
+
+  return <div ref={sketchRef}></div>;
 };
 
 export default P5Sketch;
