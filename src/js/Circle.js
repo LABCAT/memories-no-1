@@ -8,7 +8,8 @@ export default class Circle {
   }
   show() {
     //this.p5.noStroke();
-    this.p5.fill(this.c);
+    this.p5.fill(this.c[0], this.c[1], this.c[2], 200);
+    this.p5.stroke(this.c);
     this.p5.ellipse(this.x, this.y, 2 * this.r, 2 * this.r);
   }
 }
