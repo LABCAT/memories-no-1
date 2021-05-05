@@ -2,8 +2,8 @@ import React, { useRef, useEffect } from "react";
 import "./helpers/Globals";
 import "p5/lib/addons/p5.sound";
 import * as p5 from "p5";
-import Circle from "./Circle.js";
-import image from "../images/Cuba-St-Festival-2018.jpg";
+import SaveJSONToFile from "./functions/SaveJSONToFile.js";
+//import image from "../images/Tian-Tan-Buddha-2019.jpg";
 
 const P5Sketch = () => {
   const sketchRef = useRef();
@@ -19,84 +19,57 @@ const P5Sketch = () => {
 
     p.k = 0;
 
-    p.circles = [];
+    p.files = [
+      'Raohe-Street-Night-Market-2018.json',
+      'Cuba-St-Festival-2018.json',
+      'Tian-Tan-Buddha-2019.json'
+    ]
+
+    p.circles = {};
 
     p.preload = () => {
-      p.img = p.loadImage(image);
+      //p.img = p.loadImage(image);
+      p.circles = require('./json/' + p.random(p.files));
     };
 
     p.setup = () => {
       p.canvas = p.createCanvas(p.canvasWidth, p.canvasHeight);
-      //p.imageMode(p.CENTER);
+      p.noLoop();
+    };
+
+    p.saveImageData = () => {
       p.image(p.img, 0, 0);
-      const size = p.width / 192;
-      for (let x = 0; x < p.width; x = x + 10) {
-        for (let y = 0; y < p.height; y = y + 10) {
-          let c = p.img.get(
-            x + 5,
-            y + 5
+      for (let x = 2; x < 1920; x = x + 4) {
+        for (let y = 2; y < 1080; y = y + 4) {
+          const key = x + ',' + y;
+          const c = p.img.get(
+            x,
+            y
           );
-          console.log(c);
-          const newCircle = new Circle(
-            p,
-            x + 5,
-            y + 5,
-            5,
-            c
-          );
-          p.circles.push(newCircle);
+          p.circles[key] = {
+            r: 2,
+            c: c
+          }
         }
       }
+      SaveJSONToFile(p.circles, 'Tian-Tan-Buddha-2019');
     };
 
-    //https://openprocessing.org/sketch/200114
     p.draw = () => {
       p.background(255);
-
-      if (p.k < 1) {
-        //p.image(p.img, 0, 0);
+      const multiplier = 4;//must be a power of 2
+      const startPos = multiplier <= 2 ? multiplier : multiplier + 2;
+     
+      for (let x = startPos; x < p.width; x = x + (multiplier * 2)) {
+        for (let y = startPos; y < p.height; y = y + (multiplier * 2)) {
+          const key = x + ',' + y;
+          const circle = p.circles[key];
+          p.fill(circle.colour[0], circle.colour[1], circle.colour[2], 200);
+          p.stroke(circle.colour);
+          p.ellipse(x, y, multiplier * 2, multiplier * 2);
+        }
       }
-      
 
-      for (let i = 0; i < p.circles.length; i++) {
-        const circle = p.circles[i];
-        circle.show();
-      }
-
-      
-
-
-      // for (let i = 0; i < p.circles.length; i++) {
-      //   const circle = p.circles[i];
-      //   if (p.dist(p.mouseX, p.mouseY, circle.x, circle.y) < circle.r) {
-      //     p.k = 2;
-      //     p.circles.splice(i, 1);
-      //     for (let kx = 0; kx < 2; kx++) {
-      //       for (let ky = 0; ky < 2; ky++) {
-      //         let c = p.img.get(
-      //           p.int((p.pow(-1, kx) * circle.r) / 2 + circle.x),
-      //           p.int((p.pow(-1, ky) * circle.r) / 2 + circle.y)
-      //         );
-      //         const newCircle = new Circle(
-      //           p,
-      //           (p.pow(-1, kx) * circle.r) / 2 + circle.x,
-      //           (p.pow(-1, ky) * circle.r) / 2 + circle.y,
-      //           circle.r / 2,
-      //           c
-      //         );
-      //         p.circles.push(newCircle);
-      //         p.press = false;
-      //       }
-      //     }
-      //   }
-      // }
-    };
-
-    p.press = false;
-
-    p.mouseDragged = () => {
-      p.press = true;
-      p.k++;
     };
 
     p.updateCanvasDimensions = () => {
